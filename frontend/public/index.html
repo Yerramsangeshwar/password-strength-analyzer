@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PassForge — Password Strength Analyzer</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<!-- ═══ AUTH OVERLAY ═══ -->
+<div id="authOverlay" class="auth-overlay">
+  <div class="auth-card">
+    <div class="auth-logo">
+      <div class="logo-box">🔐</div>
+      <h1>PassForge</h1>
+      <p>// password strength intelligence</p>
+    </div>
+    <div class="auth-tabs">
+      <button class="auth-tab active" data-tab="login">Sign In</button>
+      <button class="auth-tab" data-tab="register">Create Account</button>
+    </div>
+    <div class="auth-form active" id="loginForm">
+      <div class="form-group"><label>Email</label><input type="email" id="loginEmail" placeholder="your@email.com" autocomplete="email"></div>
+      <div class="form-group"><label>Password</label><input type="password" id="loginPassword" placeholder="your password" autocomplete="current-password"></div>
+      <div class="auth-error" id="loginError"></div>
+      <button class="btn btn-primary" id="loginBtn">Sign In</button>
+      <button class="btn btn-ghost" id="guestBtn">Continue as Guest</button>
+    </div>
+    <div class="auth-form" id="registerForm">
+      <div class="form-group"><label>Username</label><input type="text" id="regUsername" placeholder="username" autocomplete="username"></div>
+      <div class="form-group"><label>Email</label><input type="email" id="regEmail" placeholder="your@email.com" autocomplete="email"></div>
+      <div class="form-group"><label>Password</label><input type="password" id="regPassword" placeholder="Min 6 characters" autocomplete="new-password"></div>
+      <div class="auth-error" id="registerError"></div>
+      <button class="btn btn-primary" id="registerBtn">Create Account</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ MAIN APP ═══ -->
+<div id="mainApp">
+
+  <nav class="navbar">
+    <div class="nav-logo"><div class="lp">🔐</div> PassForge</div>
+    <div class="nav-links">
+      <button class="nav-btn active" data-view="analyzer">Analyzer</button>
+      <button class="nav-btn" data-view="tools">Tools</button>
+      <button class="nav-btn" data-view="history">History</button>
+      <button class="nav-btn" data-view="stats">Stats</button>
+    </div>
+    <div class="nav-spacer"></div>
+    <div class="nav-user">
+      <span class="nav-username" id="navUsername"></span>
+      <button class="btn-logout" id="logoutBtn">Sign Out</button>
+    </div>
+  </nav>
+
+  <!-- ═══ ANALYZER VIEW ═══ -->
+  <div class="view active" id="view-analyzer">
+    <div class="app-intro fade-in">
+      <h2>Password Analyzer</h2>
+      <p>// type or paste a password to analyze its strength in real-time</p>
+    </div>
+
+    <div class="analyzer-layout">
+      <!-- LEFT COLUMN -->
+      <div style="display:flex;flex-direction:column;gap:20px;">
+
+        <div class="card fade-in">
+          <div class="card-header"><div class="dot"></div> password_input</div>
+          <div class="card-body">
+            <div class="pw-input-wrap">
+              <input type="password" class="pw-input" id="pwInput" placeholder="Enter password to analyze..." autocomplete="off" spellcheck="false">
+              <button class="pw-toggle" id="pwToggle">👁</button>
+            </div>
+
+            <div class="strength-meter">
+              <div class="strength-label-row">
+                <span class="strength-label">Strength</span>
+                <span class="strength-value" id="strengthValue">—</span>
+              </div>
+              <div class="strength-track"><div class="strength-fill" id="strengthFill"></div></div>
+            </div>
+
+            <div class="score-section">
+              <div class="score-ring-wrap">
+                <svg class="score-ring" viewBox="0 0 100 100">
+                  <circle class="score-ring-bg" cx="50" cy="50" r="45"/>
+                  <circle class="score-ring-fill" id="scoreRingFill" cx="50" cy="50" r="45"/>
+                </svg>
+                <div class="score-number">
+                  <span class="num" id="scoreNum">0</span>
+                  <span class="label">/ 100</span>
+                </div>
+              </div>
+              <div class="score-details">
+                <div class="crack-time">Crack time: <strong id="crackTime">—</strong></div>
+                <div class="entropy-row">Entropy: <span id="entropyVal">0</span> bits</div>
+                <div class="entropy-row">Length: <span id="lengthVal" style="color:var(--blue);font-weight:600">0</span> chars</div>
+              </div>
+            </div>
+
+            <div class="save-row" id="saveRow" style="display:none;">
+              <input type="text" class="label-input" id="saveLabel" placeholder="Label (e.g. Gmail, Bank...)">
+              <button class="btn-save-analysis" id="saveBtn">💾 Save</button>
+              <button class="btn-clear" id="clearBtn">✕</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="card fade-in">
+          <div class="card-header"><div class="dot" style="background:var(--green2);box-shadow:0 0 0 3px rgba(16,185,129,0.15)"></div> criteria_check</div>
+          <div class="card-body">
+            <div class="criteria-grid">
+              <div class="criterion" id="crit-length">
+                <div class="criterion-icon">📏</div>
+                <div class="criterion-text"><div class="crit-name">Length ≥ 8</div><div class="crit-detail" id="crit-length-detail">0 characters</div></div>
+                <div class="criterion-check" id="crit-length-check"></div>
+              </div>
+              <div class="criterion" id="crit-upper">
+                <div class="criterion-icon">🔠</div>
+                <div class="criterion-text"><div class="crit-name">Uppercase</div><div class="crit-detail" id="crit-upper-detail">0 found</div></div>
+                <div class="criterion-check" id="crit-upper-check"></div>
+              </div>
+              <div class="criterion" id="crit-lower">
+                <div class="criterion-icon">🔡</div>
+                <div class="criterion-text"><div class="crit-name">Lowercase</div><div class="crit-detail" id="crit-lower-detail">0 found</div></div>
+                <div class="criterion-check" id="crit-lower-check"></div>
+              </div>
+              <div class="criterion" id="crit-number">
+                <div class="criterion-icon">🔢</div>
+                <div class="criterion-text"><div class="crit-name">Numbers</div><div class="crit-detail" id="crit-number-detail">0 found</div></div>
+                <div class="criterion-check" id="crit-number-check"></div>
+              </div>
+              <div class="criterion" id="crit-special">
+                <div class="criterion-icon">⚡</div>
+                <div class="criterion-text"><div class="crit-name">Special chars</div><div class="crit-detail" id="crit-special-detail">0 found</div></div>
+                <div class="criterion-check" id="crit-special-check"></div>
+              </div>
+              <div class="criterion" id="crit-long">
+                <div class="criterion-icon">💪</div>
+                <div class="criterion-text"><div class="crit-name">Length ≥ 16</div><div class="crit-detail">Excellent length</div></div>
+                <div class="criterion-check" id="crit-long-check"></div>
+              </div>
+            </div>
+            <div class="char-analysis">
+              <div class="char-bar-title">Character Distribution</div>
+              <div class="char-bar-row"><div class="char-bar-label">Uppercase</div><div class="char-bar-track"><div class="char-bar-fill" id="bar-upper" style="background:var(--blue)"></div></div><div class="char-bar-count" id="count-upper">0</div></div>
+              <div class="char-bar-row"><div class="char-bar-label">Lowercase</div><div class="char-bar-track"><div class="char-bar-fill" id="bar-lower" style="background:var(--green2)"></div></div><div class="char-bar-count" id="count-lower">0</div></div>
+              <div class="char-bar-row"><div class="char-bar-label">Numbers</div><div class="char-bar-track"><div class="char-bar-fill" id="bar-number" style="background:var(--yellow)"></div></div><div class="char-bar-count" id="count-number">0</div></div>
+              <div class="char-bar-row"><div class="char-bar-label">Special</div><div class="char-bar-track"><div class="char-bar-fill" id="bar-special" style="background:var(--purple)"></div></div><div class="char-bar-count" id="count-special">0</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- RIGHT COLUMN -->
+      <div style="display:flex;flex-direction:column;gap:20px;">
+
+        <div class="card fade-in">
+          <div class="card-header"><div class="dot" style="background:var(--yellow);box-shadow:0 0 0 3px rgba(217,119,6,0.15)"></div> suggestions</div>
+          <div class="card-body">
+            <div class="suggestions-box">
+              <div class="sug-title">// how to improve</div>
+              <div id="suggestionsList"><div class="suggestion-item">Type a password above to get personalized suggestions</div></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card fade-in" id="patternCard" style="display:none;">
+          <div class="card-header"><div class="dot" style="background:var(--red2);box-shadow:0 0 0 3px rgba(239,68,68,0.15)"></div> pattern_warnings</div>
+          <div class="card-body"><div id="patternWarnings"></div></div>
+        </div>
+
+        <div class="card fade-in">
+          <div class="card-header"><div class="dot" style="background:var(--purple);box-shadow:0 0 0 3px rgba(124,58,237,0.15)"></div> quick_generator</div>
+          <div class="card-body">
+            <div class="gen-controls">
+              <div class="gen-control" style="grid-column:span 2;">
+                <label>Length</label>
+                <div class="gen-length-row">
+                  <input type="range" id="genLength" min="8" max="64" value="20">
+                  <span class="gen-length-val" id="genLengthVal">20</span>
+                </div>
+              </div>
+              <div class="toggle-row">
+                <div class="toggle-chip on" data-type="upper">A–Z</div>
+                <div class="toggle-chip on" data-type="lower">a–z</div>
+                <div class="toggle-chip on" data-type="numbers">0–9</div>
+                <div class="toggle-chip on" data-type="symbols">!@#$</div>
+                <div class="toggle-chip" data-type="ambiguous">No ambiguous</div>
+              </div>
+            </div>
+            <div class="gen-output-wrap">
+              <div class="gen-output" id="genOutput">Click Generate →</div>
+              <button class="gen-copy-btn" id="genCopyBtn">📋</button>
+            </div>
+            <div class="gen-actions">
+              <button class="btn-gen" id="genBtn">⚡ Generate</button>
+              <button class="btn-use" id="genUseBtn">↑ Test This</button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ TOOLS VIEW ═══ -->
+  <div class="view" id="view-tools">
+    <div class="app-intro fade-in">
+      <h2>Password Tools</h2>
+      <p>// passphrase generator · password comparison · breach checker</p>
+    </div>
+
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="passphrase">🎲 Passphrase Generator</button>
+      <button class="tab-btn" data-tab="compare">⚖️ Compare Passwords</button>
+      <button class="tab-btn" data-tab="breach">🔍 Breach Checker</button>
+    </div>
+
+    <!-- PASSPHRASE TAB -->
+    <div class="tab-panel active" id="tab-passphrase">
+      <div class="analyzer-layout">
+        <div class="card fade-in">
+          <div class="card-header"><div class="dot" style="background:var(--purple);box-shadow:0 0 0 3px var(--purple-d)"></div> passphrase_generator</div>
+          <div class="card-body">
+            <div class="passphrase-controls">
+              <div class="pp-control">
+                <label>Words</label>
+                <div class="gen-length-row">
+                  <input type="range" class="pp-word-slider" id="ppWords" min="3" max="8" value="4">
+                  <span class="gen-length-val" id="ppWordsVal" style="color:var(--purple)">4</span>
+                </div>
+              </div>
+              <div class="pp-control">
+                <label>Separator</label>
+                <input type="text" class="pp-sep-input" id="ppSep" value="-" maxlength="3">
+              </div>
+              <div class="toggle-chip" id="ppCapitalize" data-on="false">Capitalize</div>
+              <div class="toggle-chip" id="ppNumbers" data-on="false">Add numbers</div>
+            </div>
+            <div class="passphrase-output" id="ppOutput">Click Generate →</div>
+            <div class="gen-actions">
+              <button class="btn-gen" id="ppGenBtn" style="background:linear-gradient(135deg,var(--purple),#a855f7);box-shadow:0 4px 12px rgba(124,58,237,0.3)">🎲 Generate Passphrase</button>
+              <button class="btn-use" id="ppCopyBtn">📋 Copy</button>
+              <button class="btn-use" id="ppUseBtn">↑ Test This</button>
+            </div>
+          </div>
+        </div>
+        <div class="card fade-in">
+          <div class="card-header"><div class="dot" style="background:var(--purple);box-shadow:0 0 0 3px var(--purple-d)"></div> why_passphrases</div>
+          <div class="card-body">
+            <div class="suggestions-box" style="border-color:rgba(124,58,237,0.2);background:rgba(124,58,237,0.04)">
+              <div class="sug-title" style="color:var(--purple)">// why use a passphrase?</div>
+              <div class="suggestion-item" style="--c:var(--purple)">Much easier to remember than random characters</div>
+              <div class="suggestion-item">4 random words = ~51 bits of entropy</div>
+              <div class="suggestion-item">Longer = exponentially harder to crack</div>
+              <div class="suggestion-item">Adding numbers and capitals adds even more security</div>
+              <div class="suggestion-item">Great for master passwords and device PINs</div>
+            </div>
+            <div id="ppAnalysis" style="margin-top:14px;display:none;">
+              <div class="strength-meter">
+                <div class="strength-label-row">
+                  <span class="strength-label">Passphrase Strength</span>
+                  <span class="strength-value" id="ppStrengthVal">—</span>
+                </div>
+                <div class="strength-track"><div class="strength-fill" id="ppStrengthFill"></div></div>
+              </div>
+              <div style="font-size:13px;color:var(--muted);margin-top:8px;">
+                Entropy: <span id="ppEntropy" style="color:var(--purple);font-weight:600;font-family:var(--mono)">0</span> bits &nbsp;·&nbsp;
+                Crack time: <span id="ppCrack" style="color:var(--text);font-weight:600">—</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- COMPARE TAB -->
+    <div class="tab-panel" id="tab-compare">
+      <div class="card fade-in">
+        <div class="card-header"><div class="dot" style="background:var(--cyan);box-shadow:0 0 0 3px var(--cyan-d)"></div> password_comparison</div>
+        <div class="card-body">
+          <div class="compare-grid">
+            <div>
+              <div class="compare-label">Password A</div>
+              <div class="compare-input-wrap">
+                <input type="password" class="compare-input" id="cmpA" placeholder="Enter first password...">
+                <button class="compare-toggle" data-target="cmpA">👁</button>
+              </div>
+            </div>
+            <div>
+              <div class="compare-label">Password B</div>
+              <div class="compare-input-wrap">
+                <input type="password" class="compare-input" id="cmpB" placeholder="Enter second password...">
+                <button class="compare-toggle" data-target="cmpB">👁</button>
+              </div>
+            </div>
+          </div>
+
+          <div id="compareResult" style="display:none;">
+            <div class="compare-result">
+              <div class="compare-col">
+                <div class="cv-label">Password A</div>
+                <div class="cv-val" id="cmpScoreA" style="color:var(--blue)">—</div>
+                <div class="cv-sub" id="cmpStrA">—</div>
+              </div>
+              <div class="compare-vs">VS</div>
+              <div class="compare-col">
+                <div class="cv-label">Password B</div>
+                <div class="cv-val" id="cmpScoreB" style="color:var(--purple)">—</div>
+                <div class="cv-sub" id="cmpStrB">—</div>
+              </div>
+            </div>
+
+            <div class="compare-winner" id="cmpWinner"></div>
+
+            <div style="margin-top:16px;display:grid;grid-template-columns:1fr 1fr;gap:12px;" id="cmpDetails">
+              <!-- filled by JS -->
+            </div>
+          </div>
+
+          <div id="compareEmpty" style="text-align:center;padding:30px;color:var(--dim);font-size:13px;font-family:var(--mono);">
+            Type both passwords above to compare
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- BREACH TAB -->
+    <div class="tab-panel" id="tab-breach">
+      <div class="analyzer-layout">
+        <div class="card fade-in">
+          <div class="card-header"><div class="dot" style="background:var(--red2);box-shadow:0 0 0 3px var(--red-d)"></div> breach_checker</div>
+          <div class="card-body">
+            <p style="font-size:13px;color:var(--muted);margin-bottom:14px;line-height:1.6;">Check if your password has appeared in known data breaches using the <strong style="color:var(--text)">HaveIBeenPwned</strong> API. Your password is <strong style="color:var(--green)">never sent</strong> — only the first 5 chars of its SHA-1 hash are transmitted.</p>
+            <div class="breach-input-wrap">
+              <input type="password" class="breach-input" id="breachInput" placeholder="Enter password to check...">
+              <button class="btn-breach" id="breachBtn">🔍 Check Now</button>
+            </div>
+            <div id="breachResult"></div>
+            <div class="breach-note">🔒 Privacy-safe: uses k-Anonymity model. Your full password never leaves your device.</div>
+          </div>
+        </div>
+        <div class="card fade-in">
+          <div class="card-header"><div class="dot" style="background:var(--red2);box-shadow:0 0 0 3px var(--red-d)"></div> how_it_works</div>
+          <div class="card-body">
+            <div class="suggestions-box" style="border-color:rgba(220,38,38,0.15);background:rgba(220,38,38,0.03)">
+              <div class="sug-title" style="color:var(--red)">// k-anonymity explained</div>
+              <div class="suggestion-item">Your password is hashed with SHA-1 locally in the browser</div>
+              <div class="suggestion-item">Only the first 5 characters of the hash are sent to HIBP</div>
+              <div class="suggestion-item">HIBP returns all hashes starting with those 5 chars</div>
+              <div class="suggestion-item">Your browser checks if your full hash is in the list</div>
+              <div class="suggestion-item">Your actual password never leaves your device</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ HISTORY VIEW ═══ -->
+  <div class="view" id="view-history">
+    <div class="history-top">
+      <div class="section-title">History <span>// saved analyses</span></div>
+      <div class="export-btns">
+        <button class="btn-export btn-export-csv" id="exportCsvBtn">📄 Export CSV</button>
+        <button class="btn-export btn-export-pdf" id="exportPdfBtn">📑 Export PDF</button>
+      </div>
+    </div>
+    <div class="history-grid" id="historyGrid">
+      <div class="empty-history"><span class="ei">📂</span><p>No saved analyses yet.</p></div>
+    </div>
+  </div>
+
+  <!-- ═══ STATS VIEW ═══ -->
+  <div class="view" id="view-stats">
+    <div class="section-title fade-in">Statistics <span>// your password health</span></div>
+    <div class="stats-grid">
+      <div class="stat-card fade-in"><div class="stat-num" style="color:var(--blue)" id="statTotal">0</div><div class="stat-label">Total Analyzed</div></div>
+      <div class="stat-card fade-in"><div class="stat-num" style="color:var(--green)" id="statAvg">0</div><div class="stat-label">Avg. Score</div></div>
+      <div class="stat-card fade-in"><div class="stat-num" style="color:var(--purple)" id="statBest">—</div><div class="stat-label">Best Strength</div></div>
+    </div>
+    <div class="breakdown-grid">
+      <div class="card fade-in">
+        <div class="card-header"><div class="dot"></div> strength_breakdown</div>
+        <div class="card-body" id="strengthBreakdown"><div style="color:var(--dim);font-size:13px;font-family:var(--mono)">No data yet</div></div>
+      </div>
+      <div class="card fade-in">
+        <div class="card-header"><div class="dot" style="background:var(--green2);box-shadow:0 0 0 3px rgba(16,185,129,0.15)"></div> security_tips</div>
+        <div class="card-body">
+          <div class="suggestion-item">Use at least 16 characters for strong passwords</div>
+          <div class="suggestion-item">Mix uppercase, lowercase, numbers, and symbols</div>
+          <div class="suggestion-item">Avoid dictionary words and personal info</div>
+          <div class="suggestion-item">Use a unique password for every account</div>
+          <div class="suggestion-item">Consider a passphrase of 4+ random words</div>
+          <div class="suggestion-item">Use a password manager to store them safely</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /mainApp -->
+
+<div class="toast" id="toast"></div>
+<script src="js/app.js"></script>
+</body>
+</html>
